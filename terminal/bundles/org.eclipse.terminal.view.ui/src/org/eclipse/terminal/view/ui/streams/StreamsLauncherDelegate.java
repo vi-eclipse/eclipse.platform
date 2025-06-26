@@ -16,9 +16,9 @@ import java.io.OutputStream;
 import java.util.Map;
 
 import org.eclipse.core.runtime.Assert;
-import org.eclipse.terminal.internal.provisional.api.ISettingsStore;
-import org.eclipse.terminal.internal.provisional.api.ITerminalConnector;
-import org.eclipse.terminal.internal.provisional.api.TerminalConnectorExtension;
+import org.eclipse.terminal.connector.ISettingsStore;
+import org.eclipse.terminal.connector.ITerminalConnector;
+import org.eclipse.terminal.connector.TerminalConnectorExtension;
 import org.eclipse.terminal.view.core.TerminalServiceFactory;
 import org.eclipse.terminal.view.core.interfaces.ITerminalService;
 import org.eclipse.terminal.view.core.interfaces.ITerminalServiceOutputStreamMonitorListener;
@@ -61,15 +61,16 @@ public class StreamsLauncherDelegate extends AbstractLauncherDelegate {
 
 		// Check for the terminal connector id
 		String connectorId = (String) properties.get(ITerminalsConnectorConstants.PROP_TERMINAL_CONNECTOR_ID);
-		if (connectorId == null)
+		if (connectorId == null) {
 			connectorId = "org.eclipse.terminal.connector.streams.StreamsConnector"; //$NON-NLS-1$
+		}
 
 		// Extract the streams properties
 		OutputStream stdin = (OutputStream) properties.get(ITerminalsConnectorConstants.PROP_STREAMS_STDIN);
 		InputStream stdout = (InputStream) properties.get(ITerminalsConnectorConstants.PROP_STREAMS_STDOUT);
 		InputStream stderr = (InputStream) properties.get(ITerminalsConnectorConstants.PROP_STREAMS_STDERR);
 		Object value = properties.get(ITerminalsConnectorConstants.PROP_LOCAL_ECHO);
-		boolean localEcho = value instanceof Boolean ? ((Boolean) value).booleanValue() : false;
+		boolean localEcho = value instanceof Boolean b ? b.booleanValue() : false;
 		String lineSeparator = (String) properties.get(ITerminalsConnectorConstants.PROP_LINE_SEPARATOR);
 		ITerminalServiceOutputStreamMonitorListener[] stdoutListeners = (ITerminalServiceOutputStreamMonitorListener[]) properties
 				.get(ITerminalsConnectorConstants.PROP_STDOUT_LISTENERS);

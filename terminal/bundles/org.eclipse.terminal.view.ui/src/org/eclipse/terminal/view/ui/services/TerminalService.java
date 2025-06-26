@@ -22,7 +22,7 @@ import org.eclipse.core.runtime.SafeRunner;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.swt.custom.CTabItem;
 import org.eclipse.swt.widgets.Display;
-import org.eclipse.terminal.internal.provisional.api.ITerminalConnector;
+import org.eclipse.terminal.connector.ITerminalConnector;
 import org.eclipse.terminal.view.core.activator.CoreBundleActivator;
 import org.eclipse.terminal.view.core.interfaces.ITerminalService;
 import org.eclipse.terminal.view.core.interfaces.ITerminalTabListener;
@@ -111,8 +111,9 @@ public class TerminalService implements ITerminalService {
 		Assert.isNotNull(source);
 
 		// If no listener is registered, we are done here
-		if (terminalTabListeners.isEmpty())
+		if (terminalTabListeners.isEmpty()) {
 			return;
+		}
 
 		// Get the list or currently registered listeners
 		// Loop the registered terminal tab listeners and invoke the proper method
@@ -217,8 +218,9 @@ public class TerminalService implements ITerminalService {
 	 */
 	protected String normalizeTitle(String title, Object data) {
 		// If the title is explicitly specified, return as is
-		if (title != null)
+		if (title != null) {
 			return title;
+		}
 
 		// Return the default console title in all other cases
 		return Messages.TerminalService_defaultTitle;
@@ -304,12 +306,14 @@ public class TerminalService implements ITerminalService {
 						flags);
 				// Associate the original terminal properties with the tab item.
 				// This makes it easier to persist the connection data within the memento handler
-				if (item != null && !item.isDisposed())
+				if (item != null && !item.isDisposed()) {
 					item.setData("properties", properties); //$NON-NLS-1$
+				}
 
 				// Invoke the callback
-				if (done != null)
+				if (done != null) {
 					done.done(Status.OK_STATUS);
+				}
 			}
 		}, done);
 	}
@@ -325,8 +329,9 @@ public class TerminalService implements ITerminalService {
 				// Close the console
 				ConsoleManager.getInstance().closeConsole(id, title, connector, data);
 				// Invoke the callback
-				if (done != null)
+				if (done != null) {
 					done.done(Status.OK_STATUS);
+				}
 			}
 		}, done);
 	}
@@ -342,8 +347,9 @@ public class TerminalService implements ITerminalService {
 				// Close the console
 				ConsoleManager.getInstance().terminateConsole(id, title, connector, data);
 				// Invoke the callback
-				if (done != null)
+				if (done != null) {
 					done.done(Status.OK_STATUS);
+				}
 			}
 		}, done);
 	}

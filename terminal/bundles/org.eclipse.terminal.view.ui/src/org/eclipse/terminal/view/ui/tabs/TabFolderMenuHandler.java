@@ -28,13 +28,13 @@ import org.eclipse.swt.dnd.DND;
 import org.eclipse.swt.dnd.TextTransfer;
 import org.eclipse.swt.dnd.Transfer;
 import org.eclipse.swt.widgets.Menu;
-import org.eclipse.terminal.internal.control.ITerminalViewControl;
-import org.eclipse.terminal.internal.control.actions.AbstractTerminalAction;
-import org.eclipse.terminal.internal.control.actions.TerminalActionClearAll;
-import org.eclipse.terminal.internal.control.actions.TerminalActionCopy;
-import org.eclipse.terminal.internal.control.actions.TerminalActionPaste;
-import org.eclipse.terminal.internal.control.actions.TerminalActionSelectAll;
-import org.eclipse.terminal.internal.provisional.api.TerminalState;
+import org.eclipse.terminal.connector.TerminalState;
+import org.eclipse.terminal.control.ITerminalViewControl;
+import org.eclipse.terminal.control.actions.AbstractTerminalAction;
+import org.eclipse.terminal.control.actions.TerminalActionClearAll;
+import org.eclipse.terminal.control.actions.TerminalActionCopy;
+import org.eclipse.terminal.control.actions.TerminalActionPaste;
+import org.eclipse.terminal.control.actions.TerminalActionSelectAll;
 import org.eclipse.terminal.view.core.interfaces.constants.ITerminalsConnectorConstants;
 import org.eclipse.terminal.view.ui.actions.InvertColorsAction;
 import org.eclipse.terminal.view.ui.actions.RenameTerminalAction;
@@ -84,8 +84,9 @@ public class TabFolderMenuHandler extends PlatformObject {
 		 * @param manager The menu manager or <code>null</code>
 		 */
 		private void removeInvalidContributions(IMenuManager manager) {
-			if (manager == null)
+			if (manager == null) {
 				return;
+			}
 
 			IContributionItem[] items = manager.getItems();
 			for (IContributionItem item : items) {
@@ -236,7 +237,7 @@ public class TabFolderMenuHandler extends PlatformObject {
 								.containsKey(ITerminalsConnectorConstants.PROP_TRANSLATE_BACKSLASHES_ON_PASTE)) {
 							Object value = properties
 									.get(ITerminalsConnectorConstants.PROP_TRANSLATE_BACKSLASHES_ON_PASTE);
-							needsTranslation = value instanceof Boolean ? ((Boolean) value).booleanValue() : false;
+							needsTranslation = value instanceof Boolean b ? b.booleanValue() : false;
 						}
 					}
 				}

@@ -15,8 +15,8 @@ import java.io.InputStream;
 import java.io.OutputStream;
 
 import org.eclipse.core.runtime.Assert;
-import org.eclipse.terminal.internal.provisional.api.ITerminalControl;
-import org.eclipse.terminal.internal.provisional.api.provider.TerminalConnectorImpl;
+import org.eclipse.terminal.connector.ITerminalControl;
+import org.eclipse.terminal.connector.provider.TerminalConnectorImpl;
 import org.eclipse.terminal.view.core.interfaces.ITerminalServiceOutputStreamMonitorListener;
 import org.eclipse.ui.services.IDisposable;
 
@@ -73,8 +73,9 @@ public abstract class AbstractStreamsConnector extends TerminalConnectorImpl {
 		if (stdin != null) {
 			stdInMonitor = createStdInMonitor(terminalControl, stdin, localEcho, lineSeparator);
 			// Register the connector if it implements IDisposable and stdout/stderr are not monitored
-			if (stdout == null && stderr == null && this instanceof IDisposable)
+			if (stdout == null && stderr == null && this instanceof IDisposable) {
 				stdInMonitor.addDisposable((IDisposable) this);
+			}
 			// Start the monitoring
 			stdInMonitor.startMonitoring();
 		}
@@ -83,8 +84,9 @@ public abstract class AbstractStreamsConnector extends TerminalConnectorImpl {
 		if (stdout != null) {
 			stdOutMonitor = createStdOutMonitor(terminalControl, stdout, lineSeparator);
 			// Register the connector if it implements IDisposable
-			if (this instanceof IDisposable)
+			if (this instanceof IDisposable) {
 				stdOutMonitor.addDisposable((IDisposable) this);
+			}
 			// Register the listeners
 			if (stdoutListeners != null) {
 				for (ITerminalServiceOutputStreamMonitorListener l : stdoutListeners) {
@@ -99,8 +101,9 @@ public abstract class AbstractStreamsConnector extends TerminalConnectorImpl {
 		if (stderr != null) {
 			stdErrMonitor = createStdErrMonitor(terminalControl, stderr, lineSeparator);
 			// Register the connector if it implements IDisposable and stdout is not monitored
-			if (stdout == null && this instanceof IDisposable)
+			if (stdout == null && this instanceof IDisposable) {
 				stdErrMonitor.addDisposable((IDisposable) this);
+			}
 			// Register the listeners
 			if (stderrListeners != null) {
 				for (ITerminalServiceOutputStreamMonitorListener l : stderrListeners) {

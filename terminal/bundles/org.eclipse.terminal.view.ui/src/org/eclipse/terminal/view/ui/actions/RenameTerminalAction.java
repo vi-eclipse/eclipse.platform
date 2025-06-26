@@ -15,9 +15,9 @@ import org.eclipse.core.runtime.Assert;
 import org.eclipse.jface.dialogs.InputDialog;
 import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.jface.window.Window;
-import org.eclipse.terminal.internal.control.ITerminalListener.TerminalTitleRequestor;
-import org.eclipse.terminal.internal.control.ITerminalViewControl;
-import org.eclipse.terminal.internal.control.actions.AbstractTerminalAction;
+import org.eclipse.terminal.control.ITerminalViewControl;
+import org.eclipse.terminal.control.TerminalTitleRequestor;
+import org.eclipse.terminal.control.actions.AbstractTerminalAction;
 import org.eclipse.terminal.view.ui.nls.Messages;
 import org.eclipse.terminal.view.ui.tabs.TabFolderManager;
 
@@ -42,8 +42,9 @@ public class RenameTerminalAction extends AbstractTerminalAction {
 	@Override
 	public void run() {
 		ITerminalViewControl target = getTarget();
-		if (target == null)
+		if (target == null) {
 			return;
+		}
 		InputDialog inputDialog = new InputDialog(target.getControl().getShell(), //
 				Messages.RenameTerminalAction_inputdialog_title, //
 				Messages.RenameTerminalAction_inputdialog_prompt, //

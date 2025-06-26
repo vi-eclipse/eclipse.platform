@@ -16,7 +16,7 @@ import org.eclipse.swt.custom.CTabItem;
 import org.eclipse.swt.events.DisposeEvent;
 import org.eclipse.swt.events.DisposeListener;
 import org.eclipse.swt.widgets.Control;
-import org.eclipse.terminal.internal.control.ITerminalViewControl;
+import org.eclipse.terminal.control.ITerminalViewControl;
 import org.eclipse.terminal.view.core.TerminalServiceFactory;
 import org.eclipse.terminal.view.core.interfaces.ITerminalService;
 import org.eclipse.terminal.view.ui.services.TerminalService;
@@ -52,8 +52,7 @@ public class TabDisposeListener implements DisposeListener {
 		if (e.getSource() instanceof CTabItem) {
 			// Get the terminal control (if any) from the tab item
 			Object candidate = ((CTabItem) e.getSource()).getData();
-			if (candidate instanceof ITerminalViewControl) {
-				ITerminalViewControl terminal = (ITerminalViewControl) candidate;
+			if (candidate instanceof ITerminalViewControl terminal) {
 				// Keep the context menu from being disposed
 				terminal.getControl().setMenu(null);
 				terminal.disposeTerminal();
@@ -62,8 +61,9 @@ public class TabDisposeListener implements DisposeListener {
 			parentTabFolderManager.disposeTabCommandFieldHandler((CTabItem) e.getSource());
 			// Dispose the tab item control
 			Control control = ((CTabItem) e.getSource()).getControl();
-			if (control != null)
+			if (control != null) {
 				control.dispose();
+			}
 
 			// If all items got removed, we have to switch back to the empty page control
 			if (parentTabFolderManager.getTabFolder() != null

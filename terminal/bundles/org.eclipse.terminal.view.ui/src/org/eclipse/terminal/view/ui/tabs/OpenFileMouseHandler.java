@@ -31,9 +31,9 @@ import org.eclipse.jface.text.BadLocationException;
 import org.eclipse.jface.text.IDocument;
 import org.eclipse.jface.window.Window;
 import org.eclipse.swt.SWT;
-import org.eclipse.terminal.internal.control.ITerminalMouseListener;
-import org.eclipse.terminal.internal.control.ITerminalViewControl;
-import org.eclipse.terminal.internal.provisional.api.Logger;
+import org.eclipse.terminal.connector.Logger;
+import org.eclipse.terminal.control.ITerminalMouseListener;
+import org.eclipse.terminal.control.ITerminalViewControl;
 import org.eclipse.terminal.model.ITerminalTextDataReadOnly;
 import org.eclipse.terminal.view.ui.activator.UIPlugin;
 import org.eclipse.ui.IEditorInput;
@@ -61,8 +61,8 @@ public class OpenFileMouseHandler implements ITerminalMouseListener {
 					"org.eclipse.text"); //$NON-NLS-1$
 
 	private final ITerminalViewControl terminal;
-	private Pattern regex = Pattern.compile("(\\d*)(:(\\d*))?.*"); //$NON-NLS-1$
-	private IWorkbenchPartSite site;
+	private final Pattern regex = Pattern.compile("(\\d*)(:(\\d*))?.*"); //$NON-NLS-1$
+	private final IWorkbenchPartSite site;
 
 	/**
 	 * Check if we have the bundles needed.
@@ -165,8 +165,9 @@ public class OpenFileMouseHandler implements ITerminalMouseListener {
 				OpenResourceDialog openResourceDialog = new OpenResourceDialog(site.getShell(),
 						ResourcesPlugin.getWorkspace().getRoot(), IResource.FILE);
 				openResourceDialog.setInitialPattern(textToOpen);
-				if (openResourceDialog.open() != Window.OK)
+				if (openResourceDialog.open() != Window.OK) {
 					return;
+				}
 				Object[] results = openResourceDialog.getResult();
 				List<IFile> files = new ArrayList<>();
 				for (Object result : results) {

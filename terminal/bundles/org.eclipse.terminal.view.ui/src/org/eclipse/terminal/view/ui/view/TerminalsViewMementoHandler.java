@@ -19,7 +19,7 @@ import java.util.Optional;
 
 import org.eclipse.core.runtime.Assert;
 import org.eclipse.swt.custom.CTabItem;
-import org.eclipse.terminal.internal.control.ITerminalViewControl;
+import org.eclipse.terminal.control.ITerminalViewControl;
 import org.eclipse.terminal.view.core.interfaces.constants.ITerminalsConnectorConstants;
 import org.eclipse.terminal.view.ui.interfaces.ILauncherDelegate;
 import org.eclipse.terminal.view.ui.interfaces.IMementoHandler;
@@ -70,13 +70,15 @@ public class TerminalsViewMementoHandler {
 		// item to the memento
 		for (CTabItem item : saveables) {
 			// Ignore disposed items
-			if (item.isDisposed())
+			if (item.isDisposed()) {
 				continue;
+			}
 
 			// Get the original terminal properties associated with the tab item
 			Map<String, Object> properties = (Map<String, Object>) item.getData("properties"); //$NON-NLS-1$
-			if (properties == null)
+			if (properties == null) {
 				continue;
+			}
 
 			// Get the terminal launcher delegate
 			String delegateId = (String) properties.get(ITerminalsConnectorConstants.PROP_DELEGATE_ID);
@@ -108,8 +110,9 @@ public class TerminalsViewMementoHandler {
 				// Store the current encoding
 				ITerminalViewControl terminal = (ITerminalViewControl) item.getData();
 				String encoding = terminal != null ? terminal.getCharset().name() : null;
-				if (encoding == null || "".equals(encoding)) //$NON-NLS-1$
+				if (encoding == null || "".equals(encoding)) { //$NON-NLS-1$
 					encoding = (String) properties.get(ITerminalsConnectorConstants.PROP_ENCODING);
+				}
 				if (encoding != null && !"".equals(encoding)) { //$NON-NLS-1$
 					connectionMemento.putString(ITerminalsConnectorConstants.PROP_ENCODING, encoding);
 				}
@@ -147,8 +150,9 @@ public class TerminalsViewMementoHandler {
 			// Read view id and secondary id
 			String id = memento.getString("id"); //$NON-NLS-1$
 			String secondaryId = memento.getString("secondaryId"); //$NON-NLS-1$
-			if ("null".equals(secondaryId)) //$NON-NLS-1$
+			if ("null".equals(secondaryId)) { //$NON-NLS-1$
 				secondaryId = null;
+			}
 
 			// Get all the "connection" memento's.
 			IMemento[] connections = memento.getChildren("connection"); //$NON-NLS-1$

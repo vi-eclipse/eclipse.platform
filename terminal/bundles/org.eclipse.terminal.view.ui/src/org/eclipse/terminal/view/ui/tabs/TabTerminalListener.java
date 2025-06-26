@@ -18,8 +18,9 @@ import org.eclipse.jface.viewers.ISelectionProvider;
 import org.eclipse.osgi.util.NLS;
 import org.eclipse.swt.custom.CTabItem;
 import org.eclipse.swt.widgets.Display;
-import org.eclipse.terminal.internal.control.ITerminalListener;
-import org.eclipse.terminal.internal.provisional.api.TerminalState;
+import org.eclipse.terminal.connector.TerminalState;
+import org.eclipse.terminal.control.ITerminalListener;
+import org.eclipse.terminal.control.TerminalTitleRequestor;
 import org.eclipse.terminal.view.core.interfaces.constants.ITerminalsConnectorConstants;
 import org.eclipse.terminal.view.ui.nls.Messages;
 
@@ -64,8 +65,9 @@ public class TabTerminalListener implements ITerminalListener {
 	}
 
 	private void attachTo(CTabItem item) {
-		if (tabItem != null)
+		if (tabItem != null) {
 			tabItem.setData(TAB_TERMINAL_LISTENER, null);
+		}
 		item.setData(TAB_TERMINAL_LISTENER, this);
 		tabItem = item;
 	}
@@ -86,8 +88,9 @@ public class TabTerminalListener implements ITerminalListener {
 
 		// The tab item must have been not yet disposed
 		final CTabItem item = getTabItem();
-		if (item == null || item.isDisposed())
+		if (item == null || item.isDisposed()) {
 			return;
+		}
 
 		// Run asynchronously in the display thread
 		item.getDisplay().asyncExec(() -> {
@@ -142,8 +145,9 @@ public class TabTerminalListener implements ITerminalListener {
 
 			// Update the tab item title
 			final String newTitle = getTerminalConsoleTabTitle(state);
-			if (newTitle != null)
+			if (newTitle != null) {
 				item.setText(newTitle);
+			}
 		});
 	}
 
@@ -162,8 +166,9 @@ public class TabTerminalListener implements ITerminalListener {
 
 		// The tab item must have been not yet disposed
 		CTabItem item = getTabItem();
-		if (item == null || item.isDisposed())
+		if (item == null || item.isDisposed()) {
 			return null;
+		}
 
 		// Get the current tab title
 		String oldTitle = item.getText();

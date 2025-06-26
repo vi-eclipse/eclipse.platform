@@ -14,8 +14,8 @@ package org.eclipse.terminal.view.ui.internal;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.StructuredSelection;
 import org.eclipse.swt.custom.CTabItem;
-import org.eclipse.terminal.internal.control.ITerminalViewControl;
-import org.eclipse.terminal.internal.provisional.api.TerminalState;
+import org.eclipse.terminal.connector.TerminalState;
+import org.eclipse.terminal.control.ITerminalViewControl;
 import org.eclipse.terminal.view.ui.interfaces.ITerminalsView;
 import org.eclipse.terminal.view.ui.launcher.LauncherDelegateManager;
 import org.eclipse.terminal.view.ui.tabs.TabFolderManager;
@@ -29,7 +29,7 @@ public class PropertyTester extends org.eclipse.core.expressions.PropertyTester 
 	public boolean test(Object receiver, String property, Object[] args, Object expectedValue) {
 
 		if ("hasApplicableLauncherDelegates".equals(property)) { //$NON-NLS-1$
-			ISelection selection = receiver instanceof ISelection ? (ISelection) receiver
+			ISelection selection = receiver instanceof ISelection i ? i
 					: new StructuredSelection(receiver);
 			return expectedValue.equals(Boolean.valueOf(
 					LauncherDelegateManager.getInstance().getApplicableLauncherDelegates(selection).length > 0));
