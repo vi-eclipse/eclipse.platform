@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2011, 2018 Wind River Systems, Inc. and others. All rights reserved.
+ * Copyright (c) 2011, 2025 Wind River Systems, Inc. and others. All rights reserved.
  * This program and the accompanying materials are made available under the terms
  * of the Eclipse Public License 2.0 which accompanies this distribution, and is
  * available at https://www.eclipse.org/legal/epl-2.0/
@@ -8,18 +8,20 @@
  *
  * Contributors:
  * Wind River Systems - initial API and implementation
+ * Alexander Fedorov (ArSysOp) - further evolution
  *******************************************************************************/
 package org.eclipse.terminal.view.ui.internal.handler;
 
 import java.text.DateFormat;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import org.eclipse.core.commands.AbstractHandler;
 import org.eclipse.core.commands.ExecutionEvent;
 import org.eclipse.core.commands.ExecutionException;
-import org.eclipse.core.runtime.Assert;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.jface.window.Window;
@@ -32,7 +34,6 @@ import org.eclipse.terminal.view.ui.internal.ITraceIds;
 import org.eclipse.terminal.view.ui.internal.UIPlugin;
 import org.eclipse.terminal.view.ui.internal.dialogs.LaunchTerminalSettingsDialog;
 import org.eclipse.terminal.view.ui.launcher.ILauncherDelegate;
-import org.eclipse.terminal.view.ui.launcher.LauncherDelegateManager;
 import org.eclipse.ui.handlers.HandlerUtil;
 
 /**
@@ -60,16 +61,7 @@ public class LaunchTerminalCommandHandler extends AbstractHandler {
 		if (commandId.equals("org.eclipse.terminal.view.ui.command.launchConsole")) { //$NON-NLS-1$
 			LaunchTerminalSettingsDialog dialog = new LaunchTerminalSettingsDialog(shell, start);
 			if (dialog.open() == Window.OK) {
-				// Get the terminal settings from the dialog
-				Map<String, Object> properties = dialog.getSettings();
-				if (properties != null) {
-					String delegateId = (String) properties.get(ITerminalsConnectorConstants.PROP_DELEGATE_ID);
-					Assert.isNotNull(delegateId);
-					ILauncherDelegate delegate = LauncherDelegateManager.getInstance().getLauncherDelegate(delegateId,
-							false);
-					Assert.isNotNull(delegateId);
-					return delegate.createTerminalConnector(properties);
-				}
+				return findDelegate(dialog).map(delegate -> delegate.createTerminalConnector(dialog.getSettings()));
 			}
 			return null;
 		}
@@ -86,16 +78,7 @@ public class LaunchTerminalCommandHandler extends AbstractHandler {
 				dialog.setSelection(selection);
 			}
 			if (dialog.open() == Window.OK) {
-				// Get the terminal settings from the dialog
-				Map<String, Object> properties = dialog.getSettings();
-				if (properties != null) {
-					String delegateId = (String) properties.get(ITerminalsConnectorConstants.PROP_DELEGATE_ID);
-					Assert.isNotNull(delegateId);
-					ILauncherDelegate delegate = LauncherDelegateManager.getInstance().getLauncherDelegate(delegateId,
-							false);
-					Assert.isNotNull(delegateId);
-					delegate.execute(properties, null);
-				}
+				findDelegate(dialog).ifPresent(delegate -> delegate.execute(dialog.getSettings(), null));
 			}
 		} else {
 			if (UIPlugin.getTraceHandler().isSlotEnabled(0, ITraceIds.TRACE_LAUNCH_TERMINAL_COMMAND_HANDLER)) {
@@ -105,7 +88,7 @@ public class LaunchTerminalCommandHandler extends AbstractHandler {
 			}
 
 			// Check if the dialog needs to be shown at all
-			ILauncherDelegate[] delegates = LauncherDelegateManager.getInstance()
+			List<ILauncherDelegate> delegates = UIPlugin.getLaunchDelegateManager()
 					.getApplicableLauncherDelegates(selection);
 
 			if (UIPlugin.getTraceHandler().isSlotEnabled(0, ITraceIds.TRACE_LAUNCH_TERMINAL_COMMAND_HANDLER)) {
@@ -114,7 +97,7 @@ public class LaunchTerminalCommandHandler extends AbstractHandler {
 						ITraceIds.TRACE_LAUNCH_TERMINAL_COMMAND_HANDLER, LaunchTerminalCommandHandler.this);
 			}
 
-			if (delegates.length > 1 || (delegates.length == 1 && delegates[0].needsUserConfiguration())) {
+			if (delegates.size() > 1 || (delegates.size() == 1 && delegates.get(0).needsUserConfiguration())) {
 				if (UIPlugin.getTraceHandler().isSlotEnabled(0, ITraceIds.TRACE_LAUNCH_TERMINAL_COMMAND_HANDLER)) {
 					UIPlugin.getTraceHandler().trace("(b) Attempt to open launch terminal settings dialog after " //$NON-NLS-1$
 							+ (System.currentTimeMillis() - start) + " ms.", //$NON-NLS-1$
@@ -127,19 +110,10 @@ public class LaunchTerminalCommandHandler extends AbstractHandler {
 					dialog.setSelection(selection);
 				}
 				if (dialog.open() == Window.OK) {
-					// Get the terminal settings from the dialog
-					Map<String, Object> properties = dialog.getSettings();
-					if (properties != null) {
-						String delegateId = (String) properties.get(ITerminalsConnectorConstants.PROP_DELEGATE_ID);
-						Assert.isNotNull(delegateId);
-						ILauncherDelegate delegate = LauncherDelegateManager.getInstance()
-								.getLauncherDelegate(delegateId, false);
-						Assert.isNotNull(delegateId);
-						delegate.execute(properties, null);
-					}
+					findDelegate(dialog).ifPresent(delegate -> delegate.execute(dialog.getSettings(), null));
 				}
-			} else if (delegates.length == 1) {
-				ILauncherDelegate delegate = delegates[0];
+			} else if (delegates.size() == 1) {
+				ILauncherDelegate delegate = delegates.get(0);
 				Map<String, Object> properties = new HashMap<>();
 
 				// Store the id of the selected delegate
@@ -153,6 +127,14 @@ public class LaunchTerminalCommandHandler extends AbstractHandler {
 		}
 
 		return null;
+	}
+
+	private final Optional<ILauncherDelegate> findDelegate(LaunchTerminalSettingsDialog dialog) {
+		return Optional.ofNullable(dialog.getSettings())
+				.map(map -> map.get(ITerminalsConnectorConstants.PROP_DELEGATE_ID)).filter(String.class::isInstance)
+				.map(String.class::cast)
+				.flatMap(id -> UIPlugin.getLaunchDelegateManager().findLauncherDelegate(id, false));
+
 	}
 
 	private boolean isValidSelection(ISelection selection) {

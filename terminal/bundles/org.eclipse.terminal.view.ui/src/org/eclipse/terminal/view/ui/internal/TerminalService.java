@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2011, 2018 Wind River Systems, Inc. and others. All rights reserved.
+ * Copyright (c) 2011, 2025 Wind River Systems, Inc. and others. All rights reserved.
  * This program and the accompanying materials are made available under the terms
  * of the Eclipse Public License 2.0 which accompanies this distribution, and is
  * available at https://www.eclipse.org/legal/epl-2.0/
@@ -8,28 +8,30 @@
  *
  * Contributors:
  * Wind River Systems - initial API and implementation
+ * Alexander Fedorov (ArSysOp) - further evolution
  *******************************************************************************/
 package org.eclipse.terminal.view.ui.internal;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 import org.eclipse.core.runtime.Assert;
 import org.eclipse.core.runtime.ISafeRunnable;
 import org.eclipse.core.runtime.ListenerList;
 import org.eclipse.core.runtime.SafeRunner;
 import org.eclipse.core.runtime.Status;
-import org.eclipse.swt.custom.CTabItem;
 import org.eclipse.swt.widgets.Display;
+import org.eclipse.swt.widgets.Widget;
 import org.eclipse.terminal.connector.ITerminalConnector;
 import org.eclipse.terminal.view.core.ITerminalService;
 import org.eclipse.terminal.view.core.ITerminalTabListener;
 import org.eclipse.terminal.view.core.ITerminalsConnectorConstants;
 import org.eclipse.terminal.view.ui.IUIConstants;
-import org.eclipse.terminal.view.ui.launcher.ConsoleManager;
-import org.eclipse.terminal.view.ui.launcher.ILauncherDelegate;
-import org.eclipse.terminal.view.ui.launcher.LauncherDelegateManager;
+import org.eclipse.terminal.view.ui.TerminalViewId;
+import org.eclipse.terminal.view.ui.launcher.ITerminalConsoleViewManager;
 import org.eclipse.ui.PlatformUI;
+import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
 import org.osgi.service.component.annotations.ReferenceCardinality;
@@ -55,6 +57,8 @@ public class TerminalService implements ITerminalService {
 	 */
 	public static final int TAB_DISPOSED = 1;
 
+	private final ITerminalConsoleViewManager consoleViewManager;
+
 	/**
 	 * Common terminal service runnable implementation.
 	 */
@@ -63,14 +67,13 @@ public class TerminalService implements ITerminalService {
 		/**
 		 * Invoked to execute the terminal service runnable.
 		 *
-		 * @param id The terminals view id or <code>null</code>.
-		 * @param secondaryId The terminals view secondary id or <code>null</code>.
+		 * @param tvid The terminals view id or <code>null</code>.
 		 * @param title The terminal tab title. Must not be <code>null</code>.
 		 * @param connector The terminal connector. Must not be <code>null</code>.
 		 * @param data The custom terminal data node or <code>null</code>.
 		 * @param done The callback to invoke if the operation finished or <code>null</code>.
 		 */
-		public abstract void run(String id, String secondaryId, String title, ITerminalConnector connector, Object data,
+		public abstract void run(TerminalViewId tvid, String title, ITerminalConnector connector, Object data,
 				Done done);
 
 		/**
@@ -84,6 +87,11 @@ public class TerminalService implements ITerminalService {
 		public boolean isExecuteAsync() {
 			return true;
 		}
+	}
+
+	@Activate
+	public TerminalService(@Reference ITerminalConsoleViewManager consoleViewManager) {
+		this.consoleViewManager = consoleViewManager;
 	}
 
 	@Override
@@ -179,14 +187,15 @@ public class TerminalService implements ITerminalService {
 		final String finSecondaryId = secondaryId;
 		final String finTitle = title;
 		final Object finData = data;
+		TerminalViewId tvid = new TerminalViewId(finId, finSecondaryId);
 
 		// Execute the operation
 		if (!runnable.isExecuteAsync()) {
-			runnable.run(finId, finSecondaryId, finTitle, connector, finData, done);
+			runnable.run(tvid, finTitle, connector, finData, done);
 		} else {
 			try {
 				Display display = PlatformUI.getWorkbench().getDisplay();
-				display.asyncExec(() -> runnable.run(finId, finSecondaryId, finTitle, connector, finData, done));
+				display.asyncExec(() -> runnable.run(tvid, finTitle, connector, finData, done));
 			} catch (Exception e) {
 				// if display is disposed, silently ignore.
 			}
@@ -231,22 +240,10 @@ public class TerminalService implements ITerminalService {
 	 */
 	protected ITerminalConnector createTerminalConnector(Map<String, Object> properties) {
 		Assert.isNotNull(properties);
-
-		// The terminal connector result object
-		ITerminalConnector connector = null;
-
-		// Get the launcher delegate id from the properties
-		String delegateId = (String) properties.get(ITerminalsConnectorConstants.PROP_DELEGATE_ID);
-		if (delegateId != null) {
-			// Get the launcher delegate
-			ILauncherDelegate delegate = LauncherDelegateManager.getInstance().getLauncherDelegate(delegateId, false);
-			if (delegate != null) {
-				// Create the terminal connector
-				connector = delegate.createTerminalConnector(properties);
-			}
-		}
-
-		return connector;
+		return Optional.of(properties).map(map -> map.get(ITerminalsConnectorConstants.PROP_DELEGATE_ID))
+				.filter(String.class::isInstance).map(String.class::cast)
+				.flatMap(id -> UIPlugin.getLaunchDelegateManager().findLauncherDelegate(id, false))
+				.map(d -> d.createTerminalConnector(properties)).orElse(null);
 	}
 
 	@Override
@@ -256,28 +253,27 @@ public class TerminalService implements ITerminalService {
 
 		executeServiceOperation(properties, new TerminalServiceRunnable() {
 			@Override
-			public void run(final String id, final String secondaryId, final String title,
-					final ITerminalConnector connector, final Object data, final Done done) {
+			public void run(TerminalViewId tvid, final String title, final ITerminalConnector connector,
+					final Object data, final Done done) {
 				if (restoringView) {
-					doRun(id, secondaryId, title, connector, data, done);
+					doRun(tvid, title, connector, data, done);
 				} else {
 					// First, restore the view. This opens consoles from the memento
 					fRestoringView = true;
-					ConsoleManager.getInstance().showConsoleView(id, secondaryId);
+					consoleViewManager.showConsoleView(tvid);
 					fRestoringView = false;
 
 					// After that schedule opening the requested console
 					try {
 						Display display = PlatformUI.getWorkbench().getDisplay();
-						display.asyncExec(() -> doRun(id, secondaryId, title, connector, data, done));
+						display.asyncExec(() -> doRun(tvid, title, connector, data, done));
 					} catch (Exception e) {
 						// if display is disposed, silently ignore.
 					}
 				}
 			}
 
-			public void doRun(String id, String secondaryId, String title, ITerminalConnector connector, Object data,
-					Done done) {
+			public void doRun(TerminalViewId tvid, String title, ITerminalConnector connector, Object data, Done done) {
 				// Determine the terminal encoding
 				String encoding = (String) properties.get(ITerminalsConnectorConstants.PROP_ENCODING);
 				// Create the flags to pass on to openConsole
@@ -298,9 +294,7 @@ public class TerminalService implements ITerminalService {
 					flags.put(ITerminalsConnectorConstants.PROP_TITLE_DISABLE_ANSI_TITLE, false);
 				}
 				// Open the new console
-				CTabItem item;
-				item = ConsoleManager.getInstance().openConsole(id, secondaryId, title, encoding, connector, data,
-						flags);
+				Widget item = consoleViewManager.openConsole(tvid, title, encoding, connector, data, flags);
 				// Associate the original terminal properties with the tab item.
 				// This makes it easier to persist the connection data within the memento handler
 				if (item != null && !item.isDisposed()) {
@@ -321,10 +315,9 @@ public class TerminalService implements ITerminalService {
 
 		executeServiceOperation(properties, new TerminalServiceRunnable() {
 			@Override
-			public void run(String id, String secondaryId, String title, ITerminalConnector connector, Object data,
-					Done done) {
+			public void run(TerminalViewId tvid, String title, ITerminalConnector connector, Object data, Done done) {
 				// Close the console
-				ConsoleManager.getInstance().closeConsole(id, title, connector, data);
+				consoleViewManager.closeConsole(tvid, title, connector, data);
 				// Invoke the callback
 				if (done != null) {
 					done.done(Status.OK_STATUS);
@@ -339,10 +332,9 @@ public class TerminalService implements ITerminalService {
 
 		executeServiceOperation(properties, new TerminalServiceRunnable() {
 			@Override
-			public void run(String id, String secondaryId, String title, ITerminalConnector connector, Object data,
-					Done done) {
+			public void run(TerminalViewId tvid, String title, ITerminalConnector connector, Object data, Done done) {
 				// Close the console
-				ConsoleManager.getInstance().terminateConsole(id, title, connector, data);
+				consoleViewManager.terminateConsole(tvid, title, connector, data);
 				// Invoke the callback
 				if (done != null) {
 					done.done(Status.OK_STATUS);

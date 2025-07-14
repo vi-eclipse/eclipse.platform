@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2014, 2018 Wind River Systems, Inc. and others. All rights reserved.
+ * Copyright (c) 2014, 2025 Wind River Systems, Inc. and others. All rights reserved.
  * This program and the accompanying materials are made available under the terms
  * of the Eclipse Public License 2.0 which accompanies this distribution, and is
  * available at https://www.eclipse.org/legal/epl-2.0/
@@ -8,10 +8,12 @@
  *
  * Contributors:
  * Wind River Systems - initial API and implementation
+ * Alexander Fedorov (ArSysOp) - further evolution
  *******************************************************************************/
 package org.eclipse.terminal.connector.local.launcher;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.eclipse.core.commands.AbstractHandler;
@@ -21,9 +23,9 @@ import org.eclipse.core.runtime.IPath;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.jface.viewers.StructuredSelection;
+import org.eclipse.terminal.connector.local.activator.UIPlugin;
 import org.eclipse.terminal.view.core.ITerminalsConnectorConstants;
 import org.eclipse.terminal.view.ui.launcher.ILauncherDelegate;
-import org.eclipse.terminal.view.ui.launcher.LauncherDelegateManager;
 import org.eclipse.ui.IEditorInput;
 import org.eclipse.ui.IPathEditorInput;
 import org.eclipse.ui.handlers.HandlerUtil;
@@ -56,7 +58,8 @@ public class LocalLauncherHandler extends AbstractHandler {
 		}
 
 		// Get all applicable launcher delegates for the current selection
-		ILauncherDelegate[] delegates = LauncherDelegateManager.getInstance().getApplicableLauncherDelegates(selection);
+		List<ILauncherDelegate> delegates = UIPlugin.getLaunchDelegateManager()
+				.getApplicableLauncherDelegates(selection);
 		// Find the local terminal launcher delegate
 		ILauncherDelegate delegate = null;
 		for (ILauncherDelegate candidate : delegates) {

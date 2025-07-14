@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2014, 2021 Wind River Systems, Inc. and others. All rights reserved.
+ * Copyright (c) 2014, 2025 Wind River Systems, Inc. and others. All rights reserved.
  * This program and the accompanying materials are made available under the terms
  * of the Eclipse Public License 2.0 which accompanies this distribution, and is
  * available at https://www.eclipse.org/legal/epl-2.0/
@@ -8,6 +8,7 @@
  *
  * Contributors:
  * Wind River Systems - initial API and implementation
+ * Alexander Fedorov (ArSysOp) - further evolution
  *******************************************************************************/
 package org.eclipse.terminal.view.ui.internal.local.showin;
 
@@ -26,8 +27,8 @@ import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.swt.graphics.ImageData;
 import org.eclipse.terminal.view.core.ITerminalsConnectorConstants;
 import org.eclipse.terminal.view.ui.IExternalExecutablesProperties;
+import org.eclipse.terminal.view.ui.internal.UIPlugin;
 import org.eclipse.terminal.view.ui.launcher.ILauncherDelegate;
-import org.eclipse.terminal.view.ui.launcher.LauncherDelegateManager;
 import org.eclipse.ui.ISelectionService;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.actions.CompoundContributionItem;
@@ -48,8 +49,8 @@ public class DynamicContributionItems extends CompoundContributionItem implement
 		this.serviceLocator = serviceLocator;
 
 		// Get the local terminal launcher delegate
-		delegate = LauncherDelegateManager.getInstance()
-				.getLauncherDelegate("org.eclipse.terminal.connector.local.launcher.local", false); //$NON-NLS-1$
+		delegate = UIPlugin.getLaunchDelegateManager()
+				.findLauncherDelegate("org.eclipse.terminal.connector.local.launcher.local", false).orElse(null); //$NON-NLS-1$
 	}
 
 	@Override

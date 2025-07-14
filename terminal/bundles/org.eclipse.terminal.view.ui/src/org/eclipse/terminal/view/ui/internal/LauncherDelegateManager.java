@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2011 - 2018 Wind River Systems, Inc. and others. All rights reserved.
+ * Copyright (c) 2011 - 2025 Wind River Systems, Inc. and others. All rights reserved.
  * This program and the accompanying materials are made available under the terms
  * of the Eclipse Public License 2.0 which accompanies this distribution, and is
  * available at https://www.eclipse.org/legal/epl-2.0/
@@ -8,8 +8,9 @@
  *
  * Contributors:
  * Wind River Systems - initial API and implementation
+ * Alexander Fedorov (ArSysOp) - further evolution
  *******************************************************************************/
-package org.eclipse.terminal.view.ui.launcher;
+package org.eclipse.terminal.view.ui.internal;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -18,6 +19,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import org.eclipse.core.expressions.EvaluationContext;
 import org.eclipse.core.expressions.EvaluationResult;
@@ -34,16 +36,18 @@ import org.eclipse.core.runtime.Platform;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.osgi.util.NLS;
-import org.eclipse.terminal.view.ui.internal.Messages;
-import org.eclipse.terminal.view.ui.internal.UIPlugin;
+import org.eclipse.terminal.view.ui.launcher.ILaunchDelegateManager;
+import org.eclipse.terminal.view.ui.launcher.ILauncherDelegate;
 import org.eclipse.ui.ISources;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.handlers.IHandlerService;
+import org.osgi.service.component.annotations.Component;
 
 /**
  * Terminal launcher delegate manager implementation.
  */
-public class LauncherDelegateManager {
+@Component(service = ILaunchDelegateManager.class)
+public class LauncherDelegateManager implements ILaunchDelegateManager {
 	// Flag to mark the extension point manager initialized (extensions loaded).
 	private boolean initialized = false;
 
@@ -219,36 +223,16 @@ public class LauncherDelegateManager {
 
 	}
 
-	/*
-	 * Thread save singleton instance creation.
-	 */
-	private static class LazyInstanceHolder {
-		public static LauncherDelegateManager instance = new LauncherDelegateManager();
-	}
-
-	/**
-	 * Returns the singleton instance.
-	 */
-	public static LauncherDelegateManager getInstance() {
-		return LazyInstanceHolder.instance;
-	}
-
-	/**
-	 * Constructor.
-	 */
-	LauncherDelegateManager() {
-		super();
-	}
-
 	/**
 	 * Returns the list of all contributed terminal launcher delegates.
 	 *
 	 * @param unique If <code>true</code>, the method returns new instances for each
 	 *               contributed terminal launcher delegate.
 	 *
-	 * @return The list of contributed terminal launcher delegates, or an empty array.
+	 * @return The list of contributed terminal launcher delegates, or an empty list.
 	 */
-	public ILauncherDelegate[] getLauncherDelegates(boolean unique) {
+	@Override
+	public List<ILauncherDelegate> getLauncherDelegates(boolean unique) {
 		List<ILauncherDelegate> contributions = new ArrayList<>();
 		for (Proxy launcherDelegate : getExtensions().values()) {
 			ILauncherDelegate instance = unique ? launcherDelegate.newInstance() : launcherDelegate.getInstance();
@@ -256,20 +240,19 @@ public class LauncherDelegateManager {
 				contributions.add(instance);
 			}
 		}
-
-		return contributions.toArray(new ILauncherDelegate[contributions.size()]);
+		return contributions;
 	}
 
 	/**
-	 * Returns the terminal launcher delegate identified by its unique id. If no terminal
-	 * launcher delegate with the specified id is registered, <code>null</code> is returned.
+	 * Lookup a terminal launcher delegate identified by its unique id.
 	 *
 	 * @param id The unique id of the terminal launcher delegate or <code>null</code>
 	 * @param unique If <code>true</code>, the method returns new instances of the terminal launcher delegate contribution.
 	 *
-	 * @return The terminal launcher delegate instance or <code>null</code>.
+	 * @return The terminal launcher delegate instance or an empty optional if not found.
 	 */
-	public ILauncherDelegate getLauncherDelegate(String id, boolean unique) {
+	@Override
+	public Optional<ILauncherDelegate> findLauncherDelegate(String id, boolean unique) {
 		ILauncherDelegate contribution = null;
 		Map<String, Proxy> extensions = getExtensions();
 		if (extensions.containsKey(id)) {
@@ -278,16 +261,17 @@ public class LauncherDelegateManager {
 			contribution = unique ? proxy.newInstance() : proxy.getInstance();
 		}
 
-		return contribution;
+		return Optional.ofNullable(contribution);
 	}
 
 	/**
 	 * Returns the applicable terminal launcher delegates for the given selection.
 	 *
 	 * @param selection The selection or <code>null</code>.
-	 * @return The list of applicable terminal launcher delegates or an empty array.
+	 * @return The list of applicable terminal launcher delegates or an empty list.
 	 */
-	public ILauncherDelegate[] getApplicableLauncherDelegates(ISelection selection) {
+	@Override
+	public List<ILauncherDelegate> getApplicableLauncherDelegates(ISelection selection) {
 		List<ILauncherDelegate> applicable = new ArrayList<>();
 
 		for (ILauncherDelegate delegate : getLauncherDelegates(false)) {
@@ -328,7 +312,7 @@ public class LauncherDelegateManager {
 			}
 		}
 
-		return applicable.toArray(new ILauncherDelegate[applicable.size()]);
+		return applicable;
 	}
 
 	/**
