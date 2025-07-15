@@ -31,7 +31,8 @@ public class BreakpointTypeCategory extends PlatformObject implements IBreakpoin
 
 	private final String fName;
 	private ImageDescriptor fImageDescriptor = DebugPluginImages.getImageDescriptor(IInternalDebugUIConstants.IMG_OBJS_BREAKPOINT_TYPE);
-
+	private boolean fSortable;
+	private int fSortPriority;
 	/**
 	 * Constructs a type category for the given type name.
 	 *
@@ -56,6 +57,20 @@ public class BreakpointTypeCategory extends PlatformObject implements IBreakpoin
 	}
 
 	/**
+	 * Constructs a type category for the given type name with the given sort
+	 * priority.
+	 *
+	 * @param name         breakpoint type name
+	 * @param sortPriority used to calculate the sort order of this category
+	 * @since 3.19
+	 */
+	public BreakpointTypeCategory(String name, int sortPriority) {
+		fName = name;
+		fSortable = true;
+		fSortPriority = sortPriority;
+	}
+
+	/**
 	 * Returns the name of this category's breakpoint type.
 	 *
 	 * @return the name of this category's breakpoint type
@@ -64,12 +79,32 @@ public class BreakpointTypeCategory extends PlatformObject implements IBreakpoin
 		return fName;
 	}
 
+	/**
+	 * Returns the sorting priority of this category.
+	 *
+	 * @return the sorting priority of this category, default is {@code 0}
+	 * @since 3.19
+	 */
+	public int getSortPriority() {
+		return fSortPriority;
+	}
+
 	@Override
 	public boolean equals(Object object) {
 		if (object instanceof BreakpointTypeCategory type) {
 			return type.getName().equals(getName());
 		}
 		return false;
+	}
+
+	/**
+	 * Returns whether category has some sort order or not.
+	 *
+	 * @return whether category can be sorted or not.
+	 * @since 3.19
+	 */
+	public boolean isSortable() {
+		return fSortable;
 	}
 
 	@Override
