@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2011, 2018 Wind River Systems, Inc. and others. All rights reserved.
+ * Copyright (c) 2011, 2025 Wind River Systems, Inc. and others. All rights reserved.
  * This program and the accompanying materials are made available under the terms
  * of the Eclipse Public License 2.0 which accompanies this distribution, and is
  * available at https://www.eclipse.org/legal/epl-2.0/
@@ -9,6 +9,7 @@
  * Contributors:
  * Wind River Systems - initial API and implementation
  * Max Weninger (Wind River) - [361363] [TERMINALS] Implement "Pin&Clone" for the "Terminals" view
+ * Alexander Fedorov (ArSysOp) - further evolution
  *******************************************************************************/
 package org.eclipse.terminal.view.ui.internal;
 
@@ -17,6 +18,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.eclipse.core.runtime.Platform;
+import org.eclipse.core.runtime.preferences.InstanceScope;
 import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.jface.resource.ImageRegistry;
 import org.eclipse.swt.SWT;
@@ -27,8 +29,6 @@ import org.eclipse.swt.widgets.Display;
 import org.eclipse.terminal.connector.TerminalState;
 import org.eclipse.terminal.control.ITerminalViewControl;
 import org.eclipse.terminal.view.core.ITerminalService;
-import org.eclipse.terminal.view.core.utils.ScopedEclipsePreferences;
-import org.eclipse.terminal.view.core.utils.TraceHandler;
 import org.eclipse.terminal.view.ui.internal.listeners.WorkbenchWindowListener;
 import org.eclipse.terminal.view.ui.internal.view.TerminalsView;
 import org.eclipse.terminal.view.ui.internal.view.TerminalsViewMementoHandler;
@@ -42,6 +42,7 @@ import org.eclipse.ui.IWorkbenchListener;
 import org.eclipse.ui.IWorkbenchWindow;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.plugin.AbstractUIPlugin;
+import org.eclipse.ui.preferences.ScopedPreferenceStore;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 import org.osgi.util.tracker.ServiceTracker;
@@ -53,7 +54,7 @@ public class UIPlugin extends AbstractUIPlugin {
 	// The shared instance
 	private static volatile UIPlugin plugin;
 	// The scoped preferences instance
-	private static volatile ScopedEclipsePreferences scopedPreferences;
+	private static volatile ScopedPreferenceStore scopedPreferences;
 	// The trace handler instance
 	private static volatile TraceHandler traceHandler;
 	// The workbench listener instance
@@ -87,9 +88,9 @@ public class UIPlugin extends AbstractUIPlugin {
 	/**
 	 * Return the scoped preferences for this plug-in.
 	 */
-	public static ScopedEclipsePreferences getScopedPreferences() {
+	public static ScopedPreferenceStore getScopedPreferences() {
 		if (scopedPreferences == null) {
-			scopedPreferences = new ScopedEclipsePreferences(getUniqueIdentifier());
+			scopedPreferences = new ScopedPreferenceStore(InstanceScope.INSTANCE, getUniqueIdentifier());
 		}
 		return scopedPreferences;
 	}
@@ -225,29 +226,21 @@ public class UIPlugin extends AbstractUIPlugin {
 		URL consoleViewIconUrl = bundle
 				.getEntry(ImageConsts.IMAGE_DIR_ROOT + ImageConsts.IMAGE_DIR_EVIEW + "console_view.svg"); //$NON-NLS-1$
 		registry.put(ImageConsts.VIEW_Terminals, ImageDescriptor.createFromURL(consoleViewIconUrl));
+		putActionImages(registry, bundle, "lock_co.svg", //$NON-NLS-1$
+				ImageConsts.ACTION_ScrollLock_Enabled, ImageConsts.ACTION_ScrollLock_Disabled);
+		putActionImages(registry, bundle, "command_input_field.svg", //$NON-NLS-1$
+				ImageConsts.ACTION_ToggleCommandField_Enabled, ImageConsts.ACTION_ToggleCommandField_Disabled);
+		putActionImages(registry, bundle, "new_terminal_view.svg", //$NON-NLS-1$
+				ImageConsts.ACTION_NewTerminalView_Enabled, ImageConsts.ACTION_NewTerminalView_Disabled);
+		putActionImages(registry, bundle, "clear_co.svg", //$NON-NLS-1$
+				ImageConsts.ACTION_ClearAll_enabled, ImageConsts.ACTION_ClearAll_disabled);
+	}
 
-		URL enabledLockIconUrl = bundle
-				.getEntry(ImageConsts.IMAGE_DIR_ROOT + ImageConsts.IMAGE_DIR_ELCL + "lock_co.svg"); //$NON-NLS-1$
-		ImageDescriptor enabledLockIcon = ImageDescriptor.createFromURL(enabledLockIconUrl);
-		registry.put(ImageConsts.ACTION_ScrollLock_Enabled, enabledLockIcon);
-		ImageDescriptor disabledLockIcon = ImageDescriptor.createWithFlags(enabledLockIcon, SWT.IMAGE_DISABLE);
-		registry.put(ImageConsts.ACTION_ScrollLock_Disabled, disabledLockIcon);
-
-		URL enabledInputFieldIconUrl = bundle
-				.getEntry(ImageConsts.IMAGE_DIR_ROOT + ImageConsts.IMAGE_DIR_ELCL + "command_input_field.svg"); //$NON-NLS-1$
-		ImageDescriptor enabledInputFieldIcon = ImageDescriptor.createFromURL(enabledInputFieldIconUrl);
-		registry.put(ImageConsts.ACTION_ToggleCommandField_Enabled, enabledInputFieldIcon);
-		ImageDescriptor disabledInputFieldIcon = ImageDescriptor.createWithFlags(enabledInputFieldIcon,
-				SWT.IMAGE_DISABLE);
-		registry.put(ImageConsts.ACTION_ToggleCommandField_Disabled, disabledInputFieldIcon);
-
-		URL enabledTerminalViewIconUrl = bundle
-				.getEntry(ImageConsts.IMAGE_DIR_ROOT + ImageConsts.IMAGE_DIR_ELCL + "new_terminal_view.svg"); //$NON-NLS-1$
-		ImageDescriptor enabledTerminalViewIcon = ImageDescriptor.createFromURL(enabledTerminalViewIconUrl);
-		registry.put(ImageConsts.ACTION_NewTerminalView_Enabled, enabledTerminalViewIcon);
-		ImageDescriptor disabledTerminalViewIcon = ImageDescriptor.createWithFlags(enabledInputFieldIcon,
-				SWT.IMAGE_DISABLE);
-		registry.put(ImageConsts.ACTION_NewTerminalView_Disabled, disabledTerminalViewIcon);
+	private void putActionImages(ImageRegistry registry, Bundle bundle, String file, String ekey, String dkey) {
+		URL url = bundle.getEntry(ImageConsts.IMAGE_DIR_ROOT + ImageConsts.IMAGE_DIR_ELCL + file);
+		ImageDescriptor base = ImageDescriptor.createFromURL(url);
+		registry.put(ekey, base);
+		registry.put(dkey, ImageDescriptor.createWithFlags(base, SWT.IMAGE_DISABLE));
 	}
 
 	/**
